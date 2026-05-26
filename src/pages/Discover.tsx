@@ -78,10 +78,26 @@ const Discover = () => {
 
         setCurrentUser(current);
 
-        // ALL USERS
-        const { data: allUsers } = await supabase
+        // ALL USERS — capped at 100 and filtered server-side
+        let query = supabase
           .from("users")
-          .select("*");
+          .select("*")
+          .neq("id", user.id)
+          .limit(100);
+
+        // Server-side search: filter by name or skills using ilike
+        if (search.trim()) {
+          query = query.or(
+            `name.ilike.%${search.trim()}%,skills.ilike.%${search.trim()}%`
+          );
+        }
+
+        // Server-side skill filter
+        if (selectedFilter !== "All") {
+          query = query.ilike("skills", `%${selectedFilter}%`);
+        }
+
+        const { data: allUsers } = await query;
 
         setUsers(allUsers || []);
       } catch (err) {
@@ -92,7 +108,7 @@ const Discover = () => {
     };
 
     fetchData();
-  }, []);
+  }, [search, selectedFilter]);
 
   // MATCH SCORE
   const getMatchScore = (user: any) => {
@@ -117,44 +133,21 @@ const Discover = () => {
     ).length;
   };
 
-  // FILTER USERS
+  // FILTER & SCORE USERS (client-side match scoring only)
   useEffect(() => {
     if (!currentUser) return;
 
     let matched = users
-      .filter((u) => u.id !== currentUser.id)
       .map((u) => ({
         ...u,
         score: getMatchScore(u),
       }))
       .filter((u) => u.score > 0);
 
-    // SEARCH
-    if (search) {
-      matched = matched.filter(
-        (u) =>
-          u.name
-            ?.toLowerCase()
-            .includes(search.toLowerCase()) ||
-          u.skills
-            ?.toLowerCase()
-            .includes(search.toLowerCase())
-      );
-    }
-
-    // FILTERS
-    if (selectedFilter !== "All") {
-      matched = matched.filter((u) =>
-        u.skills
-          ?.toLowerCase()
-          .includes(selectedFilter.toLowerCase())
-      );
-    }
-
     matched.sort((a, b) => b.score - a.score);
 
     setFilteredUsers(matched);
-  }, [users, search, selectedFilter, currentUser]);
+  }, [users, currentUser]);
 
   return (
     <div className="min-h-screen bg-[#020617] text-white overflow-hidden">

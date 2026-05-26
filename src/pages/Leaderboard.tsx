@@ -36,6 +36,9 @@ const Leaderboard = () => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All Time");
+  const [myRank, setMyRank] = useState<number>(0);
+  const [myEntry, setMyEntry] = useState<LeaderboardEntry | null>(null);
+  const [totalLearners, setTotalLearners] = useState<number>(0);
 
   // FETCH LEADERBOARD
   const fetchLeaderboard = async () => {
@@ -70,9 +73,9 @@ const Leaderboard = () => {
       );
     }
 
-    const { data, error } = await query.order("xp", {
-      ascending: false,
-    });
+    const { data, error } = await query
+      .order("xp", { ascending: false })
+      .limit(50);
 
     if (!error && data) {
 
@@ -85,6 +88,46 @@ const Leaderboard = () => {
       }));
 
       setEntries(updatedData as LeaderboardEntry[]);
+    }
+
+    // Fetch total learner count efficiently (head-only count)
+    const { count } = await supabase
+      .from("leaderboard" as any)
+      .select("*", { count: "exact", head: true });
+
+    setTotalLearners(count || 0);
+
+    // Fetch current user's rank separately so it's always accurate
+    if (user) {
+      // Get the current user's entry
+      const { data: myData } = await supabase
+        .from("leaderboard" as any)
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (myData) {
+        const enrichedEntry = {
+          ...myData,
+          badges:
+            myData.badges && myData.badges.length > 0
+              ? myData.badges
+              : [getBadgeByXP(myData.xp)],
+        } as LeaderboardEntry;
+
+        setMyEntry(enrichedEntry);
+
+        // Count how many users have MORE XP than the current user = rank - 1
+        const { count: usersAbove } = await supabase
+          .from("leaderboard" as any)
+          .select("*", { count: "exact", head: true })
+          .gt("xp", myData.xp);
+
+        setMyRank((usersAbove || 0) + 1);
+      } else {
+        setMyEntry(null);
+        setMyRank(0);
+      }
     }
 
     setLoading(false);
@@ -159,15 +202,7 @@ const Leaderboard = () => {
 
   }, []);
 
-  const myRank =
-    entries.findIndex(
-      (e) => e.user_id === user?.id
-    ) + 1;
-
-  const myEntry =
-    entries.find(
-      (e) => e.user_id === user?.id
-    );
+  // myRank and myEntry are now fetched as state from the server
 
   // LOADING
   if (loading) {
@@ -232,7 +267,7 @@ const Leaderboard = () => {
             </p>
 
             <h2 className="mt-3 text-4xl font-bold text-cyan-400">
-              {entries.length}
+              {totalLearners}
             </h2>
 
           </div>
