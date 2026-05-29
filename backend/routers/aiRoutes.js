@@ -5,13 +5,19 @@ import {
   generateSessionSummary,
 } from "../controllers/aiController.js";
 
+import { requireAuth } from "../middlewares/requireAuth.js";
+import { rateLimiter } from "../middlewares/rateLimiter.js";
+
 const router = express.Router();
 
-router.post("/ask", askAI);
+/**
+ * AI chat endpoint (secured version from main)
+ */
+router.post("/ask", requireAuth, rateLimiter, askAI);
 
-router.post(
-  "/generate-summary",
-  generateSessionSummary
-);
+/**
+ * Session summary generator (new feature)
+ */
+router.post("/generate-summary", generateSessionSummary);
 
 export default router;
