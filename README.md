@@ -55,6 +55,7 @@ A modern peer-to-peer learning platform where students can connect, collaborate,
   * [5️⃣ Start Development Server](#5%EF%B8%8F%E2%83%A3-start-development-server)
 - [🚀 Deployment](#%F0%9F%9A%80-deployment-1)
     + [Build Command](#build-command)
+- [🛠️ Troubleshooting](#%F0%9F%9B%A0%EF%B8%8F-troubleshooting)
 - [🌟 Future Enhancements](#%F0%9F%8C%9F-future-enhancements)
 - [🤝 Contributing](#%F0%9F%A4%9D-contributing)
   * [Steps to Contribute](#steps-to-contribute)
@@ -260,6 +261,12 @@ This project can be easily deployed on:
 ```bash
 npm run build
 ```
+
+---
+
+# 🛠️ Troubleshooting
+
+If you encounter issues during setup, installation, or configuration, please refer to our [Troubleshooting Guide](TROUBLESHOOTING.md) for solutions to common problems.
 
 ---
 
