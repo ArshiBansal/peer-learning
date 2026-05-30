@@ -20,6 +20,8 @@ const LearnerDashboard = () => {
 
         const response = await axios.get(
           `${API_BASE_URL}/api/match/recommendations`,
+        const response = await fetch(
+          "http://localhost:5000/api/match/recommendations",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -27,7 +29,10 @@ const LearnerDashboard = () => {
           }
         );
 
-        setPartners(response.data.recommendations || []);
+        if (response.ok) {
+          const data = await response.json();
+          setPartners(data.recommendations || []);
+        }
       } catch (error) {
         console.error("Failed to fetch partners:", error);
       } finally {
