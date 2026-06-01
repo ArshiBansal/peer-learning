@@ -1,5 +1,6 @@
 import React, { useEffect, Suspense, useState, useRef } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { BrowserRouter, Routes, Route, Navigate, Router } from "react-router-dom";
 
 import { Toaster } from "@/components/ui/toaster";
@@ -54,7 +55,20 @@ const ResourceHub = React.lazy(() => import("@/pages/ResourceHub"));
 const StudyRooms = React.lazy(() => import("./components/StudyRooms"));
 const Room = React.lazy(() => import("./components/Room"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error: any) => {
+      console.error("Global Query Error:", error);
+      toast.error(error.message || "Failed to load data. Please try again.");
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error: any) => {
+      console.error("Global Mutation Error:", error);
+      toast.error(error.message || "An action failed. Please try again.");
+    },
+  }),
+});
 
 const WithNav = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
