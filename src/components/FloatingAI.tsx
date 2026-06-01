@@ -41,6 +41,8 @@ const FloatingAI = () => {
     setLoading(true);
 
     try {
+      // The /api/chat endpoint is protected by requireAuth middleware.
+      // Retrieve the session token from localStorage to authenticate.
       const token = localStorage.getItem("token");
 
       const response = await fetch(`${API_BASE_URL}/api/chat`, {
