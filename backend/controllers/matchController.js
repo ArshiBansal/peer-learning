@@ -1,27 +1,7 @@
 import { getSupabaseAdmin } from "../utils/supabase.js";
 import { getRelatedSkills } from "../utils/skillGraph.js";
-<<<<<<< HEAD
-import { createClient } from "@supabase/supabase-js";
-
-let supabaseAdmin = null;
-const getSupabase = () => {
-  if (supabaseAdmin) return supabaseAdmin;
-  supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY);
-  return supabaseAdmin;
-};
-import { createClient } from "@supabase/supabase-js";
-
-let supabaseAdmin = null;
-const getSupabase = () => {
-  if (supabaseAdmin) return supabaseAdmin;
-  supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY);
-  return supabaseAdmin;
-};
-// 📚 Calculate compatibility score
-=======
 
 // 📚 Calculate compatibility score purely for textual reasons now
->>>>>>> 5497f5941cabd71ddfdecd21f288a6db83fdb619
 const calculateCompatibilityScore = (currentUser, otherUser) => {
   let score = 0;
   const reasons = [];
