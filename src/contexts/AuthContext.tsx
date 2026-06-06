@@ -59,63 +59,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [cookieSynced, setCookieSynced] = useState(true);
-  const isCreatingProfile = useRef(false);
+  const profilePromises = useRef<Record<string, Promise<{ is_mentor: boolean; is_learner: boolean } | null> | undefined>>({});
 
   /**
    * Ensures user profile exists in database without overwriting existing data
    */
   const ensureProfileExists = useCallback(async (user: User) => {
-    if (isCreatingProfile.current) return null;
-
-    try {
-      isCreatingProfile.current = true;
-      const profileData = {
-        id: user.id,
-        is_mentor: false,
-        is_learner: false,
-        name: user.user_metadata?.name || user.email?.split("@")[0] || "Learner",
-        email: user.email,
-        points: 0,
-        sessions_completed: 0,
-        rating: 0,
-        badges: [],
-        skills: [],
-        interests: [],
-        teach_subjects: [],
-        learn_subjects: [],
-        bio: "",
-      };
-
-      // { ignoreDuplicates: true } prevents resetting user data to 0 on login
-      const { error } = await supabase
-        .from("profiles")
-        .upsert(profileData, { onConflict: "id", ignoreDuplicates: true });
-
-      if (error) {
-        console.error("Profile creation/upsert failed:", error.message);
-      }
-
-      // Re-fetch after upsert to avoid race conditions where the subsequent
-      // onboarding check runs before the profile row becomes visible.
-      const { data: profileAfterUpsert, error: refetchError } = await supabase
-        .from("profiles")
-        .select("is_mentor, is_learner")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (refetchError) {
-        console.error("Failed to refetch profile after upsert:", refetchError.message);
-      }
-
-      return profileAfterUpsert ?? null;
-    } catch (err) {
-      console.error("Unexpected error while creating/refetching profile:", err);
-      return null;
-    } finally {
-      setTimeout(() => {
-        isCreatingProfile.current = false;
-      }, 1000);
+    const existingPromise = profilePromises.current[user.id];
+    if (existingPromise) {
+      return existingPromise;
     }
+
+    const promise = (async () => {
+      try {
+        const profileData = {
+          id: user.id,
+          is_mentor: false,
+          is_learner: false,
+          name: user.user_metadata?.name || user.email?.split("@")[0] || "Learner",
+          email: user.email,
+          points: 0,
+          sessions_completed: 0,
+          rating: 0,
+          badges: [],
+          skills: [],
+          interests: [],
+          teach_subjects: [],
+          learn_subjects: [],
+          bio: "",
+        };
+
+        // { ignoreDuplicates: true } prevents resetting user data to 0 on login
+        const { error } = await supabase
+          .from("profiles")
+          .upsert(profileData, { onConflict: "id", ignoreDuplicates: true });
+
+        if (error) {
+          console.error("Profile creation/upsert failed:", error.message);
+        }
+
+        // Re-fetch after upsert to avoid race conditions where the subsequent
+        // onboarding check runs before the profile row becomes visible.
+        const { data: profileAfterUpsert, error: refetchError } = await supabase
+          .from("profiles")
+          .select("is_mentor, is_learner")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (refetchError) {
+          console.error("Failed to refetch profile after upsert:", refetchError.message);
+        }
+
+        return profileAfterUpsert ?? null;
+      } catch (err) {
+        console.error("Unexpected error while creating/refetching profile:", err);
+        return null;
+      } finally {
+        delete profilePromises.current[user.id];
+      }
+    })();
+
+    profilePromises.current[user.id] = promise;
+    return promise;
   }, []);
 
 
