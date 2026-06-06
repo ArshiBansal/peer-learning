@@ -1,24 +1,42 @@
 import { createContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { API_BASE_URL } from "@/config/api";
 
-const syncSessionCookie = async (session: Session | null) => {
-  try {
-    const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-    if (session?.access_token) {
-      await fetch(`${API_BASE_URL}/api/auth/set-cookie`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token: session.access_token }),
-      });
-    } else {
-      await fetch(`${API_BASE_URL}/api/auth/clear-cookie`, {
-        method: "POST",
-      });
+const syncSessionCookie = async (session: Session | null, setSynced?: (v: boolean) => void) => {
+  const MAX_RETRIES = 3;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      if (session?.access_token) {
+        await fetch(`${API_BASE_URL}/api/auth/set-cookie`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          signal: controller.signal,
+          body: JSON.stringify({ access_token: session.access_token }),
+        });
+      } else {
+        await fetch(`${API_BASE_URL}/api/auth/clear-cookie`, {
+          method: "POST",
+          credentials: "include",
+          signal: controller.signal,
+        });
+      }
+
+      clearTimeout(timeoutId);
+      setSynced?.(true);
+      return;
+    } catch (err) {
+      console.warn(`Cookie sync attempt ${attempt + 1}/${MAX_RETRIES} failed:`, err);
+      if (attempt < MAX_RETRIES - 1) {
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      }
     }
-  } catch (err) {
-    console.error("Failed to sync session cookie:", err);
   }
+  setSynced?.(false);
 };
 export interface AuthContextType {
   session: Session | null;
@@ -26,6 +44,8 @@ export interface AuthContextType {
   loading: boolean;
   needsOnboarding: boolean;
   setNeedsOnboarding: (needs: boolean) => void;
+  cookieSynced: boolean;
+  retrySyncSessionCookie: () => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -38,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [cookieSynced, setCookieSynced] = useState(true);
   const isCreatingProfile = useRef(false);
 
   /**
@@ -116,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        await syncSessionCookie(session);
+        await syncSessionCookie(session, setCookieSynced);
 
         if (session?.user) {
           // PERF: Read first to avoid firing a database write on every single page load
@@ -162,7 +183,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(session);
           setUser(session?.user ?? null);
           
-          await syncSessionCookie(session);
+          // Fire-and-forget: must NOT block supabase.auth.signUp() from returning.
+          // gotrue-js awaits every onAuthStateChange subscriber before resolving
+          // the signUp/signIn promise, so awaiting a backend call that may hang
+          // would delay the caller by the full timeout duration.
+          syncSessionCookie(session, setCookieSynced);
 
           if (session?.user) {
             try {
@@ -242,6 +267,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const retrySyncSessionCookie = useCallback(async () => {
+    await syncSessionCookie(session, setCookieSynced);
+  }, [session]);
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -252,7 +281,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, needsOnboarding, setNeedsOnboarding, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, needsOnboarding, setNeedsOnboarding, cookieSynced, retrySyncSessionCookie, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

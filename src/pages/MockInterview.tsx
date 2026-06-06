@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { API_BASE_URL } from "@/config/api";
 import { toast } from "sonner";
 import { Loader2, Send, Bot, User, CheckCircle2, AlertTriangle, ArrowRight } from "lucide-react";
@@ -78,8 +79,9 @@ const MockInterview = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
+        credentials: "include",
         body: JSON.stringify({ messages: currentMessages, role }),
       });
 
@@ -125,8 +127,9 @@ const MockInterview = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
+        credentials: "include",
         body: JSON.stringify({ messages }),
       });
 
