@@ -41,7 +41,7 @@ const faqs = [
 export default function Landing() {
   const { scrollYProgress } = useScroll();
   const { setTheme } = useTheme();
-  const { openPreferences } = useCookieConsent();
+  const { openPreferences, preferences } = useCookieConsent();
 
   const [open, setOpen] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,6 +74,17 @@ export default function Landing() {
     // Device-local daily streak using localStorage
     const KEY_STREAK = "pl_streak";
     const KEY_LAST = "pl_last_active";
+
+    if (!preferences?.functional) {
+      try {
+        localStorage.removeItem(KEY_STREAK);
+        localStorage.removeItem(KEY_LAST);
+      } catch {
+        // ignore storage access failures
+      }
+      setStreak(null);
+      return;
+    }
 
     const today = new Date();
     const todayKey = today.toISOString().slice(0, 10); // YYYY-MM-DD
@@ -112,7 +123,7 @@ export default function Landing() {
     } catch (e) {
       setStreak(0);
     }
-  }, []);
+  }, [preferences?.functional]);
 
   if (loading) {
     return (

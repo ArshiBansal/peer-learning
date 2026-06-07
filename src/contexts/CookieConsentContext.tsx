@@ -8,6 +8,7 @@ import React, {
 
 import {
   acceptAllPreferences,
+  clearFunctionalStorage,
   defaultCategoryPreferences,
   getStoredConsent,
   rejectNonEssentialPreferences,
@@ -42,6 +43,9 @@ export const CookieConsentProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const persistPreferences = useCallback((prefs: CookiePreferences) => {
     saveConsent(prefs);
+    if (!prefs.functional) {
+      clearFunctionalStorage();
+    }
     setPreferences(prefs);
     setShowBanner(false);
   }, []);
