@@ -68,10 +68,10 @@ const readConsentFromStorage = (storage: Storage): CookiePreferences | null => {
   }
 };
 
-/** Read stored consent from localStorage, falling back to sessionStorage. */
+/** Read stored consent from sessionStorage, falling back to localStorage. */
 export const getStoredConsent = (): CookiePreferences | null => {
   return (
-    readConsentFromStorage(localStorage) ?? readConsentFromStorage(sessionStorage)
+    readConsentFromStorage(sessionStorage) ?? readConsentFromStorage(localStorage)
   );
 };
 
@@ -81,6 +81,11 @@ export const saveConsent = (prefs: CookiePreferences): void => {
 
   try {
     localStorage.setItem(STORAGE_KEY, serialized);
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore storage access failures
+    }
     return;
   } catch {
     // fall through to sessionStorage
@@ -88,6 +93,11 @@ export const saveConsent = (prefs: CookiePreferences): void => {
 
   try {
     sessionStorage.setItem(STORAGE_KEY, serialized);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore storage access failures
+    }
   } catch {
     console.warn("[cookieConsent] Unable to persist consent preferences.");
   }
