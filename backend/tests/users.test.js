@@ -23,9 +23,10 @@ vi.mock("../utils/supabase.js", () => {
 describe("Users Routes - /upload-photo (Issue #957)", () => {
   it("should return 401 Unauthorized if no auth token is provided", async () => {
     // Unauthenticated request should be rejected by requireAuth
+    const origin = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')[0] : "http://localhost:5173";
     const res = await request(app)
       .post("/api/users/upload-photo")
-      .set("Origin", "http://localhost:3000")
+      .set("Origin", origin)
       // no auth header
       .attach("profilePhoto", Buffer.from("fake-image-content"), "photo.jpg");
 
@@ -34,9 +35,10 @@ describe("Users Routes - /upload-photo (Issue #957)", () => {
   });
 
   it("should return 401 Unauthorized if an invalid auth token is provided", async () => {
+    const origin = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',')[0] : "http://localhost:5173";
     const res = await request(app)
       .post("/api/users/upload-photo")
-      .set("Origin", "http://localhost:3000")
+      .set("Origin", origin)
       .set("Authorization", "Bearer invalid-token")
       .attach("profilePhoto", Buffer.from("fake-image-content"), "photo.jpg");
 
