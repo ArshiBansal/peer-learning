@@ -62,6 +62,10 @@ export default function RecentActivity() {
 
         if (!mounted) return;
 
+        if (sessionsRes.error) console.error("Sessions error:", sessionsRes.error);
+        if (resourcesRes.error) console.error("Resources error:", resourcesRes.error);
+        if (roomsRes.error) console.error("Rooms error:", roomsRes.error);
+
         const entries: ActivityItem[] = [];
 
         (sessionsRes.data ?? []).forEach((s: any) => {
@@ -97,38 +101,6 @@ export default function RecentActivity() {
         });
 
         entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        
-        // Mock fallback for local testing to demonstrate the UI
-        if (entries.length === 0) {
-          setActivities([
-            {
-              id: "mock-1",
-              title: "Joined session: React Performance Optimization",
-              time: "Just now",
-              timestamp: new Date().toISOString(),
-              icon: <CheckCircle size={16} className="text-emerald-400" />,
-              color: "bg-emerald-400/10 border-emerald-400/20",
-            },
-            {
-              id: "mock-2",
-              title: "Uploaded resource: System Design Cheatsheet",
-              time: "2 hours ago",
-              timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-              icon: <BookOpen size={16} className="text-blue-400" />,
-              color: "bg-blue-400/10 border-blue-400/20",
-            },
-            {
-              id: "mock-3",
-              title: "Joined study room: Algorithm Prep",
-              time: "Yesterday",
-              timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-              icon: <Users size={16} className="text-purple-400" />,
-              color: "bg-purple-400/10 border-purple-400/20",
-            }
-          ]);
-          return;
-        }
-
         setActivities(entries.slice(0, 4));
       } catch (err) {
         console.error("Failed to load activity feed:", err);

@@ -11,18 +11,20 @@ export default function StreakXPWidget() {
   const [data, setData] = useState<StreakData | null>(null);
 
   useEffect(() => {
-    getStreakData().then((d) => {
-      // Mock fallback for local testing to demonstrate the UI
-      if (d.streak === 0) {
+    getStreakData()
+      .then(setData)
+      .catch((err) => {
+        console.error("Failed to load streak data:", err);
+        // Fallback state
         setData({
-          ...d,
-          streak: 42,
-          totalXP: 1250,
+          streak: 0,
+          totalXP: 0,
+          lastActive: new Date().toISOString(),
+          restorationUsedToday: false,
+          restorationDate: null,
+          history: []
         });
-      } else {
-        setData(d);
-      }
-    });
+      });
   }, []);
 
   if (!data) {

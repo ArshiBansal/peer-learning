@@ -24,14 +24,6 @@ export default function SolvedDoubtsWidget() {
         
         const reviews = data || [];
         
-        // Mock fallback for local testing to demonstrate the UI
-        if (reviews.length === 0) {
-          setTotalSolved(342);
-          setThisMonth(89);
-          setGrowth("+45%");
-          return;
-        }
-        
         const total = reviews.length;
         
         const now = new Date();

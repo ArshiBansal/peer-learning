@@ -142,9 +142,11 @@ function AppContent() {
           <Route
             path="/learner-dashboard"
             element={
-              <WithNav>
-                <LearnerDashboard />
-              </WithNav>
+              <ProtectedRoute>
+                <WithNav>
+                  <LearnerDashboard />
+                </WithNav>
+              </ProtectedRoute>
             }
           />
 

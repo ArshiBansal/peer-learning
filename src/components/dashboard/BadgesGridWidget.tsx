@@ -28,12 +28,7 @@ export default function BadgesGridWidget() {
       try {
         const data = await getStreakData();
         if (!mounted) return;
-        let totalXP = data.totalXP || 0;
-        
-        // Mock fallback for local testing to demonstrate the UI
-        if (totalXP === 0) {
-          totalXP = 750; // Unlocks a few badges based on gamification.ts
-        }
+        const totalXP = data.totalXP || 0;
         
         // Map first 5 achievements for the grid
         const mappedBadges = ALL_ACHIEVEMENTS.slice(0, 5).map((achievement) => ({

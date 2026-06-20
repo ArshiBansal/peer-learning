@@ -26,6 +26,15 @@ export default function CommunitiesWidget() {
           <div
             key={community.id}
             className="flex items-center justify-between p-3 rounded-2xl bg-slate-800/50 border border-slate-700/30 hover:border-slate-600 transition-colors group cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onClick={() => { /* Navigate to community */ }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                // Navigate to community
+              }
+            }}
           >
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl ${community.color} flex items-center justify-center text-white font-bold text-lg shadow-inner`}>
